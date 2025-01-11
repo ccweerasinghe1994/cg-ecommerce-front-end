@@ -7,6 +7,7 @@ import MyForm from "./categories/createCategory";
 import { useQuery } from "@tanstack/react-query";
 import { SkeletonCard } from "./skelitons/skeletonCard";
 import { toast } from "sonner";
+import { queryConfigs } from "./tanstackQueryConfigs/queryConfigs";
 
 function App() {
   const {
@@ -14,9 +15,9 @@ function App() {
     isLoading,
     error,
   } = useQuery({
+    ...queryConfigs,
     queryKey: ["categories"],
     queryFn: fetchCategories,
-    staleTime: 1000 * 60 * 5,
   });
 
   if (isLoading) {

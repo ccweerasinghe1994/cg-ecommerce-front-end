@@ -15,10 +15,13 @@ export async function deleteCategory(categoryId: number): Promise<string> {
   return (await axiosInstance.delete(`/public/categories/${categoryId}`)).data;
 }
 
-export async function updateCategory(
-  categoryId: string,
-  categoryName: string
-): Promise<string> {
+export async function updateCategory({
+  categoryId,
+  categoryName,
+}: {
+  categoryId: number;
+  categoryName: string;
+}): Promise<string> {
   return (
     await axiosInstance.put(`/public/categories/${categoryId}`, {
       categoryName,
