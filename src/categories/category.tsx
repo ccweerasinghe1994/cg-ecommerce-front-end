@@ -1,5 +1,5 @@
+import { deleteCategory, updateCategory } from "@/api/api";
 import { Button } from "@/components/ui/button";
-import { TCategory } from "./types";
 import {
   Card,
   CardContent,
@@ -8,113 +8,45 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { toast } from "sonner";
-import { ChangeEvent, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ChangeEvent, useState } from "react";
+import { toast } from "sonner";
+import { TCategory } from "./types";
 
 type Props = {
   category: TCategory;
 };
 
 function CategoryItem({ category }: Props) {
-  const [isEditingModeEnabled, setIsEditingModeEnabled] =
-    useState<boolean>(false);
   const [updatedCategoryName, setUpdatedCategoryName] = useState<string>("");
-  const [hideDeleteButton, setHideDeleteButton] = useState<boolean>(false);
 
-  async function handleDelete() {
-    try {
-      const response = await fetch(
-        `/api/public/categories/${category.categoryId}`,
-        {
-          method: "DELETE",
-        }
-      );
+  const queryClient = useQueryClient();
+  const deleteCategoryMutation = useMutation({
+    mutationFn: deleteCategory,
+    onSuccess(data) {
+      toast.success(data);
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    },
+    onError(error) {
+      toast.error(error.message);
+    },
+  });
 
-      if (!response.ok) {
-        throw new Error(
-          `HTTP error! status: ${response.status} ${response.statusText}`
-        );
-      }
-
-      //   const data: string = await response.json();
-      toast.success("Category deleted successfully");
-      return "Category deleted successfully";
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-        console.error("Fetch Error:", error.message);
-        throw error; // Re-throw the error for further handling
-      } else {
-        toast.error("Unexpected Error");
-        console.error("Unexpected Error:", error);
-        throw error;
-      }
-    }
-  }
-
-  async function handleUpdate() {
-    setIsEditingModeEnabled(true);
-    setHideDeleteButton((s) => !s);
-    setUpdatedCategoryName(category.categoryName);
-
-    if (!isEditingModeEnabled && updatedCategoryName.length === 0) {
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `/api/public/categories/${category.categoryId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            categoryName: updatedCategoryName,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `HTTP error! status: ${response.status} ${response.statusText}`
-        );
-      }
-
-      //   const data: string = await response.json();
-      toast.success("Category updated successfully");
-      setIsEditingModeEnabled(false);
-      setHideDeleteButton(false);
-      return "Category updated successfully";
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-        console.error("Fetch Error:", error.message);
-        throw error; // Re-throw the error for further handling
-      } else {
-        toast.error("Unexpected Error");
-        console.error("Unexpected Error:", error);
-        throw error;
-      }
-    }
-  }
+  const updateCategoryMutation = useMutation({
+    mutationFn: updateCategory,
+    onSuccess(data) {
+      toast.success(data);
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    },
+    onError(error) {
+      toast.error(error.message);
+    },
+  });
 
   function handleCategoryNameChange(event: ChangeEvent<HTMLInputElement>) {
     setUpdatedCategoryName(event.target.value);
   }
-
-  const cetegroryContent = (
-    <Input
-      value={
-        updatedCategoryName.length > 0
-          ? updatedCategoryName
-          : category.categoryName
-      }
-      disabled={!isEditingModeEnabled}
-      onChange={handleCategoryNameChange}
-    />
-  );
 
   return (
     <>
@@ -123,18 +55,33 @@ function CategoryItem({ category }: Props) {
           <CardTitle>Category</CardTitle>
           <CardDescription>{category.categoryName}</CardDescription>
         </CardHeader>
-        <CardContent>{cetegroryContent}</CardContent>
+        <CardContent>
+          <Input
+            value={
+              updatedCategoryName.length > 0
+                ? updatedCategoryName
+                : category.categoryName
+            }
+            onChange={handleCategoryNameChange}
+          />
+        </CardContent>
         <CardFooter>
           <div className="flex gap-2">
-            {!hideDeleteButton && (
-              <Button variant={"destructive"} onClick={handleDelete}>
-                delete
-              </Button>
-            )}
+            <Button
+              variant={"destructive"}
+              onClick={() => deleteCategoryMutation.mutate(category.categoryId)}
+            >
+              delete
+            </Button>
+
             <Button
               className="bg-blue-500"
-              onClick={handleUpdate}
-              disabled={category.categoryName === updatedCategoryName}
+              onClick={() =>
+                updateCategoryMutation.mutate({
+                  categoryId: category.categoryId,
+                  categoryName: updatedCategoryName,
+                })
+              }
             >
               update
             </Button>
