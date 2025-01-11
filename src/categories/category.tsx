@@ -11,6 +11,8 @@ import {
 import { toast } from "sonner";
 import { ChangeEvent, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { deleteCategory } from "@/api/api";
 
 type Props = {
   category: TCategory;
@@ -21,37 +23,14 @@ function CategoryItem({ category }: Props) {
     useState<boolean>(false);
   const [updatedCategoryName, setUpdatedCategoryName] = useState<string>("");
   const [hideDeleteButton, setHideDeleteButton] = useState<boolean>(false);
-
-  async function handleDelete() {
-    try {
-      const response = await fetch(
-        `/api/public/categories/${category.categoryId}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `HTTP error! status: ${response.status} ${response.statusText}`
-        );
-      }
-
-      //   const data: string = await response.json();
-      toast.success("Category deleted successfully");
-      return "Category deleted successfully";
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-        console.error("Fetch Error:", error.message);
-        throw error; // Re-throw the error for further handling
-      } else {
-        toast.error("Unexpected Error");
-        console.error("Unexpected Error:", error);
-        throw error;
-      }
-    }
-  }
+  const queryClient = useQueryClient();
+  const deleteCategoryMutation = useMutation({
+    mutationFn: deleteCategory,
+    onSuccess(data) {
+      toast.success(data);
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    },
+  });
 
   async function handleUpdate() {
     setIsEditingModeEnabled(true);
@@ -127,7 +106,10 @@ function CategoryItem({ category }: Props) {
         <CardFooter>
           <div className="flex gap-2">
             {!hideDeleteButton && (
-              <Button variant={"destructive"} onClick={handleDelete}>
+              <Button
+                variant={"destructive"}
+                onClick={() => deleteCategoryMutation.mutate(category.categoryId)}
+              >
                 delete
               </Button>
             )}
