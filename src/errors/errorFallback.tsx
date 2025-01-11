@@ -1,4 +1,6 @@
-function Fallback({ error, resetErrorBoundary }) {
+import { FallbackProps } from 'react-error-boundary';
+
+function Fallback({ error, resetErrorBoundary }: FallbackProps) {
   console.log("🚀 ~ Fallback ~ resetErrorBoundary:", resetErrorBoundary);
   console.log("🚀 ~ Fallback ~ error:", error);
   // Call resetErrorBoundary() to reset the error boundary and retry the render.

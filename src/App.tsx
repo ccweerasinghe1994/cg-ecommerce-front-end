@@ -30,7 +30,7 @@ function App() {
         setCategories(data);
       } catch (error: unknown) {
         if (error instanceof Error) {
-          console.error("Fetch Error:", error.message);
+          console.log("🚀 ~ fetchData ~ error:", error);
           throw error; // Re-throw the error for further handling
         } else {
           console.error("Unexpected Error:", error);
