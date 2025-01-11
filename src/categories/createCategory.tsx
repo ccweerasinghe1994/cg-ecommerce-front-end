@@ -1,3 +1,4 @@
+import { createCategory } from "@/api/api";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Dispatch, SetStateAction } from "react";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -19,50 +20,31 @@ const formSchema = z.object({
   categoryName: z.string().min(3).max(100),
 });
 
-export default function MyForm({
-  onReload,
-}: {
-  onReload: Dispatch<SetStateAction<boolean>>;
-}) {
+export default function MyForm() {
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: createCategory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    },
+    onError: (error) => {
+      console.error("Category creation error", error);
+      toast.error("Failed to create category. Please try again.");
+    },
+  });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   });
 
-  async function handleCategoryCreation(values: z.infer<typeof formSchema>) {
-    try {
-      const response = await fetch("/api/public/categories", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `HTTP error! status: ${response.status} ${response.statusText}`
-        );
-      }
-
-      //   const data: string = await response.json();
-      return "Category created successfully";
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error("Fetch Error:", error.message);
-        throw error; // Re-throw the error for further handling
-      } else {
-        console.error("Unexpected Error:", error);
-        throw error;
-      }
-    }
+  function handleCategoryCreation(values: z.infer<typeof formSchema>) {
+    mutation.mutate(values);
   }
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      await handleCategoryCreation(values);
+      handleCategoryCreation(values);
       form.reset();
       toast.success("Category has been created.");
-      onReload(true);
     } catch (error) {
       console.error("Form submission error", error);
       toast.error("Failed to submit the form. Please try again.");
