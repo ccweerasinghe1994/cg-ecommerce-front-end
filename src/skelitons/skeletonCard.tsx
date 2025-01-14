@@ -1,13 +1,27 @@
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function SkeletonCard() {
+export default function CategorySkeleton() {
   return (
-    <div className="flex flex-col space-y-3">
-      <Skeleton className="h-[125px] w-[250px] rounded-xl" />
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-[250px]" />
-        <Skeleton className="h-4 w-[200px]" />
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-24" /> {/* Category title */}
+        <Skeleton className="h-4 w-40 mt-2" /> {/* Category description */}
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-10 w-full" /> {/* Input field */}
+      </CardContent>
+      <CardFooter>
+        <div className="flex gap-2">
+          <Skeleton className="h-9 w-16" /> {/* Delete button */}
+          <Skeleton className="h-9 w-16" /> {/* Update button */}
+        </div>
+      </CardFooter>
+    </Card>
   );
 }

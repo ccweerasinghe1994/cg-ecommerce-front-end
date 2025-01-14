@@ -12,6 +12,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { AxiosError } from "axios";
+import { BadgePlus, LoaderPinwheel } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -22,29 +24,32 @@ const formSchema = z.object({
 
 export default function MyForm() {
   const queryClient = useQueryClient();
-  const mutation = useMutation({
-    mutationFn: createCategory,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-    },
-    onError: (error) => {
-      console.error("Category creation error", error);
-      toast.error("Failed to create category. Please try again.");
-    },
-  });
+  const { mutate: handleCreateCategory, isPending: isCreatingCategory } =
+    useMutation({
+      mutationFn: createCategory,
+      onSuccess: (data) => {
+        toast.success(
+          `Category ${data.content.categoryName} created successfully`
+        );
+        queryClient.invalidateQueries({ queryKey: ["categories"] });
+      },
+      onError: (error) => {
+        // console.error("Category creation error", error);
+        toast.error(error.message);
+      },
+    });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   });
 
   function handleCategoryCreation(values: z.infer<typeof formSchema>) {
-    mutation.mutate(values);
+    handleCreateCategory(values);
   }
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       handleCategoryCreation(values);
       form.reset();
-      toast.success("Category has been created.");
     } catch (error) {
       console.error("Form submission error", error);
       toast.error("Failed to submit the form. Please try again.");
@@ -78,7 +83,14 @@ export default function MyForm() {
             </FormItem>
           )}
         />
-        <Button type="submit">Submit</Button>
+        <Button disabled={isCreatingCategory} size="lg" type="submit">
+          Create Category{" "}
+          {isCreatingCategory ? (
+            <LoaderPinwheel color="white" className="animate-spin" />
+          ) : (
+            <BadgePlus size={48} className="animate-bounce" />
+          )}
+        </Button>
       </form>
     </Form>
   );
