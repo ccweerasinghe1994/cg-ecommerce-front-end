@@ -4,34 +4,45 @@ import { fetchCategories } from "./api/api";
 import CategoryList from "./categories/categoryList";
 import MyForm from "./categories/createCategory";
 
-import { useQuery } from "@tanstack/react-query";
-import { SkeletonCard } from "./skelitons/skeletonCard";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+
 import { toast } from "sonner";
 import { queryConfigs } from "./tanstackQueryConfigs/queryConfigs";
+import SkeltonCategoryList from "./skelitons/categorySkelitonList";
+import { useState } from "react";
+import CategoryPagination from "./categories/categoryPagination";
 
 function App() {
+  const [page, setPage] = useState<number>(0);
+  const [pageSize] = useState<number>(8);
   const {
     data: categories,
     isLoading,
+    isFetching,
+    isError,
+    isPending,
     error,
   } = useQuery({
     ...queryConfigs,
-    queryKey: ["categories"],
-    queryFn: fetchCategories,
+    queryKey: ["categories", page, pageSize],
+    queryFn: () => fetchCategories(page, pageSize),
+    placeholderData: keepPreviousData,
   });
 
-  if (isLoading) {
-    return <SkeletonCard />;
-  }
-
-  if (error) {
-    return toast.error("Failed to fetch categories");
+  if (isError) {
+    return toast.error(error.message);
   }
 
   return (
     <div className="">
       <MyForm />
-      {categories && <CategoryList categories={categories} />}
+      {isFetching || isPending ? (
+        <SkeltonCategoryList />
+      ) : (
+        <CategoryList categories={categories?.content ?? []} />
+      )}
+      {/* {isFetching && <SkeltonCategoryList />} */}
+      <CategoryPagination onPageChange={setPage} />
     </div>
   );
 }

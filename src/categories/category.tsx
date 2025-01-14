@@ -13,7 +13,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChangeEvent, useState } from "react";
 import { toast } from "sonner";
 import { TCategory } from "./types";
-
+import { LoaderPinwheel } from "lucide-react";
 type Props = {
   category: TCategory;
 };
@@ -22,27 +22,31 @@ function CategoryItem({ category }: Props) {
   const [updatedCategoryName, setUpdatedCategoryName] = useState<string>("");
 
   const queryClient = useQueryClient();
-  const deleteCategoryMutation = useMutation({
-    mutationFn: deleteCategory,
-    onSuccess(data) {
-      toast.success(data);
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-    },
-    onError(error) {
-      toast.error(error.message);
-    },
-  });
+  const { mutate: deleteCategoryMutation, isPending: isDeleting } = useMutation(
+    {
+      mutationFn: deleteCategory,
+      onSuccess(data) {
+        toast.success(data.content);
+        queryClient.invalidateQueries({ queryKey: ["categories"] });
+      },
+      onError(error) {
+        toast.error(error.message);
+      },
+    }
+  );
 
-  const updateCategoryMutation = useMutation({
-    mutationFn: updateCategory,
-    onSuccess(data) {
-      toast.success(data);
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-    },
-    onError(error) {
-      toast.error(error.message);
-    },
-  });
+  const { mutate: updateCategoryMutation, isPending: isUpdating } = useMutation(
+    {
+      mutationFn: updateCategory,
+      onSuccess(data) {
+        toast.success(data.content.categoryName + " updated successfully");
+        queryClient.invalidateQueries({ queryKey: ["categories"] });
+      },
+      onError(error) {
+        toast.error(error.message);
+      },
+    }
+  );
 
   function handleCategoryNameChange(event: ChangeEvent<HTMLInputElement>) {
     setUpdatedCategoryName(event.target.value);
@@ -57,6 +61,7 @@ function CategoryItem({ category }: Props) {
         </CardHeader>
         <CardContent>
           <Input
+            disabled={isDeleting || isUpdating}
             value={
               updatedCategoryName.length > 0
                 ? updatedCategoryName
@@ -69,21 +74,38 @@ function CategoryItem({ category }: Props) {
           <div className="flex gap-2">
             <Button
               variant={"destructive"}
-              onClick={() => deleteCategoryMutation.mutate(category.categoryId)}
+              onClick={() => deleteCategoryMutation(category.categoryId)}
+              disabled={isDeleting || isUpdating}
             >
-              delete
+              {isDeleting ? (
+                <>
+                  <LoaderPinwheel color="white" className="animate-spin" />
+                  <span>deleting...</span>
+                </>
+              ) : (
+                "delete"
+              )}
             </Button>
 
             <Button
-              className="bg-blue-500"
+              variant={"secondary"}
+              disabled={isDeleting || isUpdating}
+              className="transition-all"
               onClick={() =>
-                updateCategoryMutation.mutate({
+                updateCategoryMutation({
                   categoryId: category.categoryId,
                   categoryName: updatedCategoryName,
                 })
               }
             >
-              update
+              {isUpdating ? (
+                <>
+                  <LoaderPinwheel color="white" className="animate-spin" />
+                  <span>updating</span>
+                </>
+              ) : (
+                "update"
+              )}
             </Button>
           </div>
         </CardFooter>
